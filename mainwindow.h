@@ -23,6 +23,7 @@ private:
 
 private Q_SLOTS:
     void onOpenOrCloseButtonPushed();
+    void onLog(const QString &text);
 
 private:
     Ui::MainWindow *ui;
