@@ -78,7 +78,6 @@ void TimerEmulThreadWorker::onReadyRead()
     inHexFinal.prepend("readed: ");
     if (m_currentState == telemetryMode) {
         if (m_buffer.length() == 0x11) {
-            qDebug() << Q_FUNC_INFO << (int)m_buffer.at(2);
             emit textInform(inHexFinal);
             if (m_buffer.at(2) == (char)0x83) {
                 m_serialPort->write("READY");
@@ -86,7 +85,6 @@ void TimerEmulThreadWorker::onReadyRead()
                 emit textInform("write READY");
             }
             m_buffer.clear();
-
         }
     } else if (m_currentState == sentAlgDataMode) {
         if (m_buffer.length() == 0x22) {
