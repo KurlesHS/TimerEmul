@@ -1,5 +1,6 @@
 #include "timeremulthreadworker.h"
 #include <QSerialPort>
+#include <QDebug>
 // в этом режиме шлём телеметрию, ожидаем команды на изменение положения машинок
 // и команд на запись / чтение настроек прошивки
 static const int telemetryMode = 0x00;
@@ -16,10 +17,10 @@ TimerEmulThreadWorker::TimerEmulThreadWorker(QObject *parent) :
     m_serialPort(nullptr),
     m_timer(new QTimer(this))
 {
-    /*
+
     connect(m_timer, SIGNAL(timeout()), this, SLOT(onTimeoutWaitFullPacket()));
-    m_timer->setInterval(10);
-    */
+    m_timer->setInterval(4000);
+
 }
 
 TimerEmulThreadWorker::~TimerEmulThreadWorker()
@@ -74,26 +75,34 @@ void TimerEmulThreadWorker::onReadyRead()
     for (int i = 0; i < inhex.length()/ 2; ++i) {
         inHexFinal.append("0x").append(inhex.mid(i * 2, 2)).append(" ");
     }
-    emit textInform(inHexFinal);
+    inHexFinal.prepend("readed: ");
     if (m_currentState == telemetryMode) {
         if (m_buffer.length() == 0x11) {
-            m_serialPort->write("READY");
-            m_currentState = sentAlgDataMode;
+            qDebug() << Q_FUNC_INFO << (int)m_buffer.at(2);
+            emit textInform(inHexFinal);
+            if (m_buffer.at(2) == (char)0x83) {
+                m_serialPort->write("READY");
+                m_currentState = sentAlgDataMode;
+                emit textInform("write READY");
+            }
             m_buffer.clear();
+
         }
     } else if (m_currentState == sentAlgDataMode) {
         if (m_buffer.length() == 0x22) {
             m_serialPort->write("GOOD ");
             m_buffer.clear();
+            emit textInform(inHexFinal);
+            emit textInform("write GOOD ");
         }
     }
-
-
-
+    m_timer->start();
 }
 
 void TimerEmulThreadWorker::onTimeoutWaitFullPacket()
 {
     m_timer->stop();
+    emit textInform("******* END ********");
+    m_currentState = telemetryMode;
 
 }
